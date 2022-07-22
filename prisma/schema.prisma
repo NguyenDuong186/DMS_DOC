@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   Int                   @id @default(autoincrement())
+  name                 String?
+  email                String                @unique
+  password             String                @db.VarChar(150)
+  hashedRT             String?
+  job_title            String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  department           Department?           @relation("employee", fields: [departmentId], references: [id])
+  departmentId         Int?
+  is_van_thu           Boolean               @default(false)
+  nguoi_giao_task      TaskDocument[]        @relation("nguoi_giao_task")
+  nguoi_xu_ly_task     TaskDocument[]        @relation("nguoi_xu_ly_task")
+  nguoi_lien_quan_task TaskDocument[]        @relation("nguoi_lien_quan_task")
+  role                 Role                  @default(User)
+  DocumentShareUser    DocumentShareUser[]
+  Document             Document[]
+  HistoryEditDocument  HistoryEditDocument[]
+  Doc_xu_ly            Document[]            @relation("xu_ly")
+  Doc_hoan_thanh       Document[]            @relation("hoan_thanh")
+}
+
+enum Role {
+  User
+  Admin
+  VanThu
+}
+
+model Department {
+  id               Int        @id @default(autoincrement())
+  title            String     @unique
+  van_thu_id       Int?
+  department_code  String?    @unique
+  employee         User[]     @relation("employee")
+  don_vi_vao_so    Document[] @relation("don_vi_vao_so")
+  don_vi_soan_thao Document[] @relation("don_vi_soan_thao")
+  don_vi_noi_bo    Document[] @relation("don_vi_noi_bo")
+}
+
+model Argency {
+  id               Int        @id @default(autoincrement())
+  title            String     @unique
+  co_quan_ban_hanh Document[] @relation("co_quan_ban_hanh")
+  noi_nhan         Document[] @relation("noi_nhan")
+}
+
+model Tag {
+  id                Int        @id @default(autoincrement())
+  title             String
+  tien_to_sinh_ma   String?    @unique
+  phan_nhom_van_ban String?
+  Document          Document[]
+}
+
+model Document {
+  id                  Int                   @id @default(autoincrement())
+  phan_nhom_van_ban   String
+  create_at           DateTime              @default(now())
+  author              User?                 @relation(fields: [authorId], references: [id])
+  authorId            Int?
+  don_vi_vao_so       Department            @relation("don_vi_vao_so", fields: [don_vi_vao_so_id], references: [id])
+  don_vi_vao_so_id    Int
+  ngay_ban_hanh       DateTime
+  so_hieu             String?
+  so_hieu_phu         String?
+  so_ky_hieu          String                @unique
+  trich_yeu           String
+  loai_van_ban        Tag                   @relation(fields: [tagId], references: [id])
+  tagId               Int
+  ghi_chu             String
+  co_quan_ban_hanh    Argency?              @relation("co_quan_ban_hanh", fields: [co_quan_ban_hanh_id], references: [id])
+  co_quan_ban_hanh_id Int?
+  ngay_den            DateTime?
+  do_khan             String?
+  do_mat              String
+  so_trang            String?
+  url_doc             String?
+  file_name           String?
+  don_vi_soan_thao    Department?           @relation("don_vi_soan_thao", fields: [don_vi_soan_thao_id], references: [id])
+  don_vi_soan_thao_id Int?
+  ngay_hieu_luc       DateTime?
+  tinh_trang_hieu_luc String?
+  nguoi_ky            String?
+  ngay_ky             DateTime?
+  ngay_het_hieu_luc   DateTime?
+  noi_nhan            Argency?              @relation("noi_nhan", fields: [noi_nhan_id], references: [id])
+  noi_nhan_id         Int?
+  usersRecevie        DocumentShareUser[]
+  taskDocument        TaskDocument[]
+  is_deleted          Boolean
+  don_vi_noi_bo       Department?           @relation("don_vi_noi_bo", fields: [don_vi_noi_bo_id], references: [id])
+  don_vi_noi_bo_id    Int?
+  HistoryEditDocument HistoryEditDocument[]
+  user_xu_ly          User?                 @relation("xu_ly", fields: [user_xu_ly_id], references: [id])
+  user_xu_ly_id       Int?
+  user_hoan_thanh     User?                 @relation("hoan_thanh", fields: [user_hoan_thanh_id], references: [id])
+  user_hoan_thanh_id  Int?
+}
+
+model TaskDocument {
+  id                 Int      @id @default(autoincrement())
+  van_ban            Document @relation(fields: [van_ban_id], references: [id])
+  van_ban_id         Int
+  nguoi_giao         User?    @relation("nguoi_giao_task", fields: [nguoi_giao_id], references: [id])
+  nguoi_giao_id      Int?
+  nguoi_xu_ly        User?    @relation("nguoi_xu_ly_task", fields: [nguoi_xu_ly_id], references: [id])
+  nguoi_xu_ly_id     Int?
+  nguoi_lien_quan    User?    @relation("nguoi_lien_quan_task", fields: [nguoi_lien_quan_id], references: [id])
+  nguoi_lien_quan_id Int?
+  noi_dung           String
+  ngay_giao          DateTime @default(now())
+  han_xu_ly          DateTime
+  y_kien             String?
+  status             String
+  is_completed       Boolean
+  is_processing      Boolean
+}
+
+model DocumentShareUser {
+  user       User     @relation(fields: [userId], references: [id])
+  document   Document @relation(fields: [documentId], references: [id])
+  userId     Int
+  documentId Int
+  sharedAt   DateTime @default(now())
+
+  @@id([userId, documentId])
+}
+
+model HistoryEditDocument {
+  id            Int      @id @default(autoincrement())
+  document      Document @relation(fields: [documentId], references: [id])
+  documentId    Int
+  editor        User     @relation(fields: [editorId], references: [id])
+  editorId      Int
+  createdAt     DateTime @default(now())
+  update_detail String
+}
